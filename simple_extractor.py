@@ -25,6 +25,8 @@ import networks
 from utils.transforms import transform_logits
 from datasets.simple_extractor_dataset import SimpleFolderDataset
 
+from scipy.spatial import KDTree
+
 dataset_settings = {
     'lip': {
         'input_size': [473, 473],
@@ -87,6 +89,40 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
+def get_nearest_simple_color_rgb(rgb):
+  names = ['Red', 'Red', 'White', 'Black', 'Green', 'Blue', 'Yellow', 'Aqua', 'Magenta', 'Brown', 'Gray']
+  positions = [(255,0,0), (128, 0, 0), (255,255,255), (0,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,0,255), (170,110,140), (128,128,128)]
+  spacedb = KDTree(positions)
+  querycolor = rgb
+  dist, index = spacedb.query(querycolor)
+  # print('The color %r is closest to %s.'%(querycolor, names[index]))
+  return positions[index], names[index]
+  # print('The color %r is closest to %s.'%(querycolor, names[index]))
+
+def dominant_color(colors):
+  nearest_colors_list = []
+  for i in colors:
+      nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
+  freq = {}
+  for item in nearest_colors_list:
+      if (item in freq):
+          freq[item] += 1
+      else:
+          freq[item] = 1
+  freq = sorted(freq, key=freq.get, reverse=True)
+  # print(freq)
+  return freq[0]
+
+def get_target_pixels(result_as_np_array, class_numbers, img_name):
+  img_path = '/content/new_images/' + img_name
+  im = Image.open(img_path)
+  pix = im.load()
+  list_colors = []
+  for x_, x in enumerate(result_as_np_array):
+    for y_, y in enumerate(x):
+      if result_as_np_array[x_, y_] in class_numbers:
+        list_colors.append(pix[y_,x_])
+  print(get_nearest_simple_color_rgb(dominant_color(list_colors)))
 
 def main():
     args = get_arguments()
@@ -142,6 +178,9 @@ def main():
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
+            result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
+            class_numbers = [5, 6, 7, 10]
+            get_target_pixels(result_as_np_array, class_numbers, img_name)
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
             output_img.save(parsing_result_path)
