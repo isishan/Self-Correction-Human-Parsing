@@ -57,10 +57,10 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="Self Correction for Human Parsing")
 
     parser.add_argument("--dataset", type=str, default='lip', choices=['lip', 'atr', 'pascal'])
-    parser.add_argument("--model-restore", type=str, default='', help="restore pretrained model parameters.")
+    parser.add_argument("--model-restore", type=str, default='checkpoints/final.pth', help="restore pretrained model parameters.")
     parser.add_argument("--gpu", type=str, default='0', help="choose gpu device.")
-    parser.add_argument("--input-dir", type=str, default='', help="path of input image folder.")
-    parser.add_argument("--output-dir", type=str, default='', help="path of output image folder.")
+    parser.add_argument("--input-dir", type=str, default='new_images', help="path of input image folder.")
+    parser.add_argument("--output-dir", type=str, default='out', help="path of output image folder.")
     parser.add_argument("--logits", action='store_true', default=False, help="whether to save the logits.")
 
     return parser.parse_args()
@@ -89,9 +89,53 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
+def print_pic(coords, img_path, colors):
+  import matplotlib.pyplot as plt
+  import matplotlib.patches as patches
+  from PIL import Image
+
+  im = Image.open(img_path)
+
+  # Create figure and axes
+  fig, ax = plt.subplots()
+
+  # Display the image
+  ax.imshow(im)
+
+  # Create a Rectangle patch
+  rect = patches.Rectangle(coords[0], coords[1][0] - coords[0][0], coords[1][1] - coords[0][1], linewidth=1, edgecolor='r', facecolor='none')
+
+  # Add the patch to the Axes
+  ax.add_patch(rect)
+  colors = [get_nearest_simple_color_rgb(x)[1] for x in colors]
+  ax.annotate(str(colors), coords[0], color='black', weight='bold', fontsize=10, ha='center', va='center')
+  plt.savefig(img_path[:-3]+'new.png' ,dpi=300, bbox_inches = "tight")
+  plt.show()
+
 def get_nearest_simple_color_rgb(rgb):
-  names = ['Red', 'Red', 'White', 'Black', 'Green', 'Blue', 'Yellow', 'Aqua', 'Magenta', 'Brown', 'Gray']
-  positions = [(255,0,0), (128, 0, 0), (255,255,255), (0,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,0,255), (170,110,140), (128,128,128)]
+  names = ['Black', 'Black', 'Brown', 'Yellow', 'Yellow',
+    'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Blue', 'Blue', 'Blue',
+    'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
+    'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
+    'Grey', 'Grey', 'Grey', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
+    'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
+    'Green', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
+    'Red', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White',
+    'White', 'White', 'White', 'White']
+  positions = [(0,0,0), (51,51,0),
+    (170,110,140), (255,255,204), (255,255,153), (255,255,102), (255,255,51), (255,255,0), (204,204,0),
+    (153,153,0), (230,230,250), (176,224,230), (173,216,230),
+    (135,206,250), (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180),
+    (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,139),
+    (0,0,128), (25,25,112), (220,220,220), (211,211,211), (192,192,192), (169,169,169), (128,128,128),
+    (105,105,105), (119,136,153), (112,128,144), (47,79,79),(124,252,0), (127,255,0), (50,205,50), (0,255,0),
+    (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,255,127), (0,250,154), (144,238,144),
+    (152,251,152),(143,188,143),(60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
+    (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34),
+    (255,0,0), (139,0,0), (128,0,0), (255,99,71), (255,69,0), (219,112,147), (255,255,255), (255,250,250),
+    (240,255,240), (245,255,250), (240,255,255), (240,248,255), (248,248,255), (245,245,245), (255,245,238),
+    (245,245,220), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
+  ]
   spacedb = KDTree(positions)
   querycolor = rgb
   dist, index = spacedb.query(querycolor)
@@ -113,33 +157,67 @@ def dominant_color(colors):
   # print(freq)
   return freq[0]
 
-def get_target_pixels(result_as_np_array, class_numbers, img_name):
-  img_path = '/content/new_images/' + img_name
+class_dict = {
+    'Upper': [5,6,7,10],
+    'Lower': [9,10,12]
+  }
+
+def get_target_pixels(result_as_np_array, class_name, img_name, coords):
+  img_path = '/content/Self-Correction-Human-Parsing/new_images/' + img_name
   im = Image.open(img_path)
   pix = im.load()
   list_colors = []
   for x_, x in enumerate(result_as_np_array):
     for y_, y in enumerate(x):
-      if result_as_np_array[x_, y_] in class_numbers:
+      if result_as_np_array[x_, y_] in class_dict[class_name]:
         list_colors.append(pix[y_,x_])
-  print(get_nearest_simple_color_rgb(dominant_color(list_colors)))
+  if list_colors == []:
+    return None
+  color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
+  coords1 = {
+    'x1': int(coords[0]),
+    'y1': int(coords[1]),
+    'x2': int(coords[2]),
+    'y2': int(coords[3])
+  }
+  coords2 = {
+    'top-left' : [int(coords[0]),int(coords[1])],
+    'bottom-right' : [int(coords[2]),int(coords[3])]
+  }
+  return {
+    'class' : class_name,
+    'confidence' : 100,
+    'coordinates' : coords1,
+    'coords' : coords2,
+    'color1' : color1[1]
+  }
 
-def main():
-    args = get_arguments()
+def get_objects(result_as_np_array, img_name, coords):
+  class_names = ['Upper', 'Lower']
+  objects = []
+  for class_name in class_names:
+    res = get_target_pixels(result_as_np_array, class_name, img_name, coords)
+    if res != None:
+      objects.append(res)
+  return objects
 
-    gpus = [int(i) for i in args.gpu.split(',')]
+def main(**args):
+    # os.chdir('content/Self-Correction-Human-Parsing/')
+    # print(os.getcwd())
+    # args = get_arguments()
+    gpus = [int(i) for i in args['gpu'].split(',')]
     assert len(gpus) == 1
-    if not args.gpu == 'None':
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    if not args['gpu'] == 'None':
+        os.environ["CUDA_VISIBLE_DEVICES"] = args['gpu']
 
-    num_classes = dataset_settings[args.dataset]['num_classes']
-    input_size = dataset_settings[args.dataset]['input_size']
-    label = dataset_settings[args.dataset]['label']
+    num_classes = dataset_settings[args['dataset']]['num_classes']
+    input_size = dataset_settings[args['dataset']]['input_size']
+    label = dataset_settings[args['dataset']]['label']
     print("Evaluating total class number {} with {}".format(num_classes, label))
 
     model = networks.init_model('resnet101', num_classes=num_classes, pretrained=None)
 
-    state_dict = torch.load(args.model_restore)['state_dict']
+    state_dict = torch.load(args['model_restore'])['state_dict']
     from collections import OrderedDict
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
@@ -153,13 +231,14 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.406, 0.456, 0.485], std=[0.225, 0.224, 0.229])
     ])
-    dataset = SimpleFolderDataset(root=args.input_dir, input_size=input_size, transform=transform)
+    dataset = SimpleFolderDataset(root=args['input_dir'], input_size=input_size, transform=transform)
     dataloader = DataLoader(dataset)
 
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
+    if not os.path.exists(args['output_dir']):
+        os.makedirs(args['output_dir'])
 
     palette = get_palette(num_classes)
+    objects = []
     with torch.no_grad():
         for idx, batch in enumerate(tqdm(dataloader)):
             image, meta = batch
@@ -177,18 +256,18 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
+            parsing_result_path = os.path.join(args['output_dir'], img_name[:-4] + '.png')
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
-            class_numbers = [5, 6, 7, 10]
-            get_target_pixels(result_as_np_array, class_numbers, img_name)
+            objects += (get_objects(result_as_np_array, img_name, args['coords'][img_name[:-4]]))
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
             output_img.save(parsing_result_path)
-            if args.logits:
-                logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
-                np.save(logits_result_path, logits_result)
-    return
+            # if args.logits:
+            #     logits_result_path = os.path.join(output_dir, img_name[:-4] + '.npy')
+            #     np.save(logits_result_path, logits_result)
+    return objects
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
+
