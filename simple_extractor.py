@@ -239,7 +239,7 @@ def main(**args):
         os.makedirs(args['output_dir'])
 
     palette = get_palette(num_classes)
-    objects = []
+    objects = {}
     with torch.no_grad():
         for idx, batch in enumerate(tqdm(dataloader)):
             image, meta = batch
@@ -259,7 +259,11 @@ def main(**args):
             parsing_result = np.argmax(logits_result, axis=2)
             parsing_result_path = os.path.join(args['output_dir'], img_name[:-4] + '.png')
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
-            objects += (get_objects(result_as_np_array, img_name, args['coords'][img_name[:-4]]))
+            key = img_name[:-6]
+            if key in objects.keys():
+                objects[key] += (get_objects(result_as_np_array, img_name, args['coords'][img_name[:-4]]))
+            else:
+                objects[key] = (get_objects(result_as_np_array, img_name, args['coords'][img_name[:-4]]))
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
             output_img.save(parsing_result_path)
