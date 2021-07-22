@@ -113,40 +113,41 @@ def print_pic(coords, img_path, colors):
   plt.show()
 
 def get_nearest_simple_color_rgb(rgb):
-  names = ['Black', 'Black', 'Brown', 'Yellow', 'Yellow',
-    'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Blue', 'Blue', 'Blue',
-    'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
-    'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
-    'Grey', 'Grey', 'Grey', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
-    'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
-    'Green', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
-    'Red', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White',
-    'White', 'White', 'White', 'White']
+  names = ['Black', 'Black',
+      'Brown', 'Brown', 'Brown',
+      'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
+      'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
+      'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
+      'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
+      'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
+      'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
   positions = [(0,0,0), (51,51,0),
-    (170,110,140), (255,255,204), (255,255,153), (255,255,102), (255,255,51), (255,255,0), (204,204,0),
-    (153,153,0), (230,230,250), (176,224,230), (173,216,230),
-    (135,206,250), (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180),
-    (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,139),
-    (0,0,128), (25,25,112), (220,220,220), (211,211,211), (192,192,192), (169,169,169), (128,128,128),
-    (105,105,105), (119,136,153), (112,128,144), (47,79,79),(124,252,0), (127,255,0), (50,205,50), (0,255,0),
-    (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,255,127), (0,250,154), (144,238,144),
-    (152,251,152),(143,188,143),(60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
-    (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34),
-    (255,0,0), (139,0,0), (128,0,0), (255,99,71), (255,69,0), (219,112,147), (255,255,255), (255,250,250),
-    (240,255,240), (245,255,250), (240,255,255), (240,248,255), (248,248,255), (245,245,245), (255,245,238),
-    (245,245,220), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
+      (170,110,140), (139,0,0), (128,0,0),
+      (255,255,204), (255,255,153), (255,255,102), (255,255,0), (204,204,0), (153,153,0),
+      (176,224,230), (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180), (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,128), (25,25,112),
+      (192,192,192), (169,169,169), (128,128,128), (105,105,105), (119,136,153), (112,128,144), (47,79,79),
+      (50,205,50), (0,255,0), (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,250,154), (144,238,144), (152,251,152), (60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
+      (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34), (255,0,0), (255,99,71), (255,69,0), (219,112,147),
+      (211,211,211), (220,220,220), (230,230,250), (255,255,255), (255,250,250), (240,255,240), (245,255,250), (240,255,255), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
   ]
   spacedb = KDTree(positions)
   querycolor = rgb
   dist, index = spacedb.query(querycolor)
   # print('The color %r is closest to %s.'%(querycolor, names[index]))
-  return positions[index], names[index]
+  if type(rgb) is list:
+    positions_res = [positions[i] for i in index]
+    names_res = [names[i] for i in index]
+  else:
+    return positions[index], names[index]
+  return positions_res, names_res
+  # return positions[index], names[index]
   # print('The color %r is closest to %s.'%(querycolor, names[index]))
 
 def dominant_color(colors):
   nearest_colors_list = []
-  for i in colors:
-      nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
+  # for i in colors:
+  #     nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
+  nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
   freq = {}
   for item in nearest_colors_list:
       if (item in freq):
