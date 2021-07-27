@@ -21,13 +21,10 @@ from utils.transforms import get_affine_transform
 
 class SimpleFolderDataset(data.Dataset):
     def __init__(self, list_im, input_size=[512, 512], transform=None):
-        # self.root = root
         self.input_size = input_size
         self.transform = transform
         self.aspect_ratio = input_size[1] * 1.0 / input_size[0]
         self.input_size = np.asarray(input_size)
-
-        # self.file_list = os.listdir(self.root)
         self.file_list = list_im
 
     def __len__(self):
@@ -50,8 +47,6 @@ class SimpleFolderDataset(data.Dataset):
 
     def __getitem__(self, index):
         img_name = list(self.file_list.keys())[index]
-        # img_path = os.path.join(self.root, img_name)
-        # img = cv2.imread(img_path, cv2.IMREAD_COLOR)
         img = list(self.file_list.values())[index]
         h, w, _ = img.shape
 
@@ -59,8 +54,7 @@ class SimpleFolderDataset(data.Dataset):
         person_center, s = self._box2cs([0, 0, w - 1, h - 1])
         r = 0
         trans = get_affine_transform(person_center, s, r, self.input_size)
-        # from google.colab.patches import cv2_imshow
-        # cv2_imshow(img)
+
         input = cv2.warpAffine(
             img,
             trans,
@@ -68,8 +62,6 @@ class SimpleFolderDataset(data.Dataset):
             flags=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_CONSTANT,
             borderValue=(0, 0, 0))
-        # cv2_imshow(input)
-        # print("Input Size: ", self.input_size)
         input = self.transform(input)
         meta = {
             'name': img_name,
