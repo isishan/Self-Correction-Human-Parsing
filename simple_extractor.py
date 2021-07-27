@@ -227,7 +227,6 @@ def main(**args):
         os.makedirs(args['output_dir'])
 
     objects = {}
-    avg_color = 0
     with torch.no_grad():
         for idx, batch in enumerate(tqdm(dataloader)):
             image, meta = batch
@@ -248,12 +247,8 @@ def main(**args):
             parsing_result_path = os.path.join(args['output_dir'], img_name + '.png')
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
             key = img_name[:-2]
-            st = time.time()
             if key in objects.keys():
                 objects[key] += (get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name]))
             else:
                 objects[key] = get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
-            en = time.time()
-            avg_color = (avg_color + (en - st)) / 2
-    print("avg color guesser time = ", avg_color)
     return objects
