@@ -25,6 +25,7 @@ import networks
 from utils.transforms import transform_logits
 from datasets import simple_extractor_dataset
 import importlib
+
 simple_extractor_dataset = importlib.reload(simple_extractor_dataset)
 from datasets.simple_extractor_dataset import SimpleFolderDataset
 
@@ -60,7 +61,8 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="Self Correction for Human Parsing")
 
     parser.add_argument("--dataset", type=str, default='lip', choices=['lip', 'atr', 'pascal'])
-    parser.add_argument("--model-restore", type=str, default='checkpoints/final.pth', help="restore pretrained model parameters.")
+    parser.add_argument("--model-restore", type=str, default='checkpoints/final.pth',
+                        help="restore pretrained model parameters.")
     parser.add_argument("--gpu", type=str, default='0', help="choose gpu device.")
     parser.add_argument("--input-dir", type=str, default='new_images', help="path of input image folder.")
     parser.add_argument("--output-dir", type=str, default='out', help="path of output image folder.")
@@ -92,122 +94,159 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
+
 def print_pic(coords, img_path, colors):
-  import matplotlib.pyplot as plt
-  import matplotlib.patches as patches
-  from PIL import Image
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    from PIL import Image
 
-  im = Image.open(img_path)
+    im = Image.open(img_path)
 
-  # Create figure and axes
-  fig, ax = plt.subplots()
+    # Create figure and axes
+    fig, ax = plt.subplots()
 
-  # Display the image
-  ax.imshow(im)
+    # Display the image
+    ax.imshow(im)
 
-  # Create a Rectangle patch
-  rect = patches.Rectangle(coords[0], coords[1][0] - coords[0][0], coords[1][1] - coords[0][1], linewidth=1, edgecolor='r', facecolor='none')
+    # Create a Rectangle patch
+    rect = patches.Rectangle(coords[0], coords[1][0] - coords[0][0], coords[1][1] - coords[0][1], linewidth=1,
+                             edgecolor='r', facecolor='none')
 
-  # Add the patch to the Axes
-  ax.add_patch(rect)
-  colors = [get_nearest_simple_color_rgb(x)[1] for x in colors]
-  ax.annotate(str(colors), coords[0], color='black', weight='bold', fontsize=10, ha='center', va='center')
-  plt.savefig(img_path[:-3]+'new.png' ,dpi=300, bbox_inches = "tight")
-  plt.show()
+    # Add the patch to the Axes
+    ax.add_patch(rect)
+    colors = [get_nearest_simple_color_rgb(x)[1] for x in colors]
+    ax.annotate(str(colors), coords[0], color='black', weight='bold', fontsize=10, ha='center', va='center')
+    plt.savefig(img_path[:-3] + 'new.png', dpi=300, bbox_inches="tight")
+    plt.show()
+
 
 def get_nearest_simple_color_rgb(rgb):
-  names = ['Black', 'Black',
-      'Brown', 'Brown', 'Brown',
-      'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
-      'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
-      'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
-      'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
-      'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
-      'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
-  positions = [(0,0,0), (51,51,0),
-      (170,110,140), (139,0,0), (128,0,0),
-      (255,255,204), (255,255,153), (255,255,102), (255,255,0), (204,204,0), (153,153,0),
-      (176,224,230), (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180), (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,128), (25,25,112),
-      (192,192,192), (169,169,169), (128,128,128), (105,105,105), (119,136,153), (112,128,144), (47,79,79),
-      (50,205,50), (0,255,0), (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,250,154), (144,238,144), (152,251,152), (60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
-      (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34), (255,0,0), (255,99,71), (255,69,0), (219,112,147),
-      (211,211,211), (220,220,220), (230,230,250), (255,255,255), (255,250,250), (240,255,240), (245,255,250), (240,255,255), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
-  ]
-  spacedb = KDTree(positions)
-  querycolor = rgb
-  dist, index = spacedb.query(querycolor)
-  # print('The color %r is closest to %s.'%(querycolor, names[index]))
-  if type(rgb) is list:
-    positions_res = [positions[i] for i in index]
-    names_res = [names[i] for i in index]
-  else:
-    return positions[index], names[index]
-  return positions_res, names_res
-  # return positions[index], names[index]
-  # print('The color %r is closest to %s.'%(querycolor, names[index]))
+    names = ['Black', 'Black',
+             'Brown', 'Brown', 'Brown',
+             'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
+             'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
+             'Blue', 'Blue', 'Blue',
+             'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
+             'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
+             'Green', 'Green', 'Green', 'Green',
+             'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
+             'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
+    positions = [(0, 0, 0), (51, 51, 0),
+                 (170, 110, 140), (139, 0, 0), (128, 0, 0),
+                 (255, 255, 204), (255, 255, 153), (255, 255, 102), (255, 255, 0), (204, 204, 0), (153, 153, 0),
+                 (176, 224, 230), (135, 206, 235), (0, 191, 255), (176, 196, 222), (30, 144, 255), (100, 149, 237),
+                 (70, 130, 180), (95, 158, 160), (123, 104, 238), (106, 90, 205), (72, 61, 139), (65, 105, 225),
+                 (0, 0, 255), (0, 0, 205), (0, 0, 128), (25, 25, 112),
+                 (192, 192, 192), (169, 169, 169), (128, 128, 128), (105, 105, 105), (119, 136, 153), (112, 128, 144),
+                 (47, 79, 79),
+                 (50, 205, 50), (0, 255, 0), (34, 139, 34), (0, 128, 0), (0, 100, 0), (173, 255, 47), (154, 205, 50),
+                 (0, 250, 154), (144, 238, 144), (152, 251, 152), (60, 179, 113), (32, 178, 170), (46, 139, 87),
+                 (128, 128, 0), (85, 107, 47), (107, 142, 35),
+                 (255, 160, 122), (250, 128, 114), (233, 150, 122), (240, 128, 128), (205, 92, 92), (220, 20, 60),
+                 (178, 34, 34), (255, 0, 0), (255, 99, 71), (255, 69, 0), (219, 112, 147),
+                 (211, 211, 211), (220, 220, 220), (230, 230, 250), (255, 255, 255), (255, 250, 250), (240, 255, 240),
+                 (245, 255, 250), (240, 255, 255), (253, 245, 230), (255, 250, 240), (255, 255, 240), (240, 248, 255)
+                 ]
+    spacedb = KDTree(positions)
+    querycolor = rgb
+    dist, index = spacedb.query(querycolor)
+    # print('The color %r is closest to %s.'%(querycolor, names[index]))
+    if type(rgb) is list:
+        positions_res = [positions[i] for i in index]
+        names_res = [names[i] for i in index]
+    else:
+        return positions[index], names[index]
+    return positions_res, names_res
+    # return positions[index], names[index]
+    # print('The color %r is closest to %s.'%(querycolor, names[index]))
+
 
 def dominant_color(colors):
-  nearest_colors_list = []
-  # for i in colors:
-  #     nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
-  nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
-  freq = {}
-  for item in nearest_colors_list:
-      if (item in freq):
-          freq[item] += 1
-      else:
-          freq[item] = 1
-  freq = sorted(freq, key=freq.get, reverse=True)
-  # print(freq)
-  return freq[0]
+    nearest_colors_list = []
+    # for i in colors:
+    #     nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
+    nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
+    freq = {}
+    for item in nearest_colors_list:
+        if (item in freq):
+            freq[item] += 1
+        else:
+            freq[item] = 1
+    freq = sorted(freq, key=freq.get, reverse=True)
+    # print(freq)
+    return freq[0]
+
 
 class_dict = {
-    'Upper': [5,6,7,10],
-    'Lower': [9,10,12]
-  }
+    'Upper': [5, 6, 7, 10],
+    'Lower': [9, 10, 12]
+}
+import time
+
+avg_time = 0
+
 
 def get_target_pixels(result_as_np_array, class_name, img, coords):
-  # img_path = '/content/Self-Correction-Human-Parsing/new_images/' + img_name
-  # im = Image.open(img_path)
-  # pix = im.load()
-  list_colors = []
-  from google.colab.patches import cv2_imshow
-  # cv2_imshow(img)
-  for x_, x in enumerate(result_as_np_array):
-    for y_, y in enumerate(x):
-      if result_as_np_array[x_, y_] in class_dict[class_name]:
-        bgr = img[x_,y_]
+    # img_path = '/content/Self-Correction-Human-Parsing/new_images/' + img_name
+    # im = Image.open(img_path)
+    # pix = im.load()
+    list_colors = []
+    start = time.time()
+    global avg_time
+    # cv2_imshow(img)
+    # for x_, x in enumerate(result_as_np_array):
+    #   for y_, y in enumerate(x):
+    #     if result_as_np_array[x_, y_] in class_dict[class_name]:
+    #       bgr = img[x_,y_]
+    #       list_colors.append([bgr[2], bgr[1], bgr[0]])
+
+    lis = np.array(class_dict[class_name])
+    # print(type(lis), lis)
+    res = np.where(result_as_np_array == lis)
+    res = [(np.where(result_as_np_array == x)) for x in lis]
+    res = (np.hstack(res))
+    rows, columns = res[0], res[1]
+    # print(type(res), res)
+    rows, columns = res
+    for r, c in zip(rows, columns):
+        bgr = img[r, c]
         list_colors.append([bgr[2], bgr[1], bgr[0]])
-        # print(img[x_,y_], get_nearest_simple_color_rgb(img[x_,y_])[1])
-  if list_colors == []:
-    return None
-  color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
-  coords1 = {
-    'x1': int(coords[0]),
-    'y1': int(coords[1]),
-    'x2': int(coords[2]),
-    'y2': int(coords[3])
-  }
-  coords2 = {
-    'top-left' : [int(coords[0]),int(coords[1])],
-    'bottom-right' : [int(coords[2]),int(coords[3])]
-  }
-  return {
-    'class' : class_name,
-    'confidence' : 100,
-    'coordinates' : coords1,
-    'coords' : coords2,
-    'color1' : color1[1]
-  }
+
+    end = time.time()
+    avg_time = (avg_time + (end - start)) / 2
+
+    # print(img[x_,y_], get_nearest_simple_color_rgb(img[x_,y_])[1])
+    if list_colors == []:
+        return None
+    color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
+    coords1 = {
+        'x1': int(coords[0]),
+        'y1': int(coords[1]),
+        'x2': int(coords[2]),
+        'y2': int(coords[3])
+    }
+    coords2 = {
+        'top-left': [int(coords[0]), int(coords[1])],
+        'bottom-right': [int(coords[2]), int(coords[3])]
+    }
+    return {
+        'class': class_name,
+        'confidence': 100,
+        'coordinates': coords1,
+        'coords': coords2,
+        'color1': color1[1]
+    }
+
 
 def get_objects(result_as_np_array, img, coords):
-  class_names = ['Upper', 'Lower']
-  objects = []
-  for class_name in class_names:
-    res = get_target_pixels(result_as_np_array, class_name, img, coords)
-    if res != None:
-      objects.append(res)
-  return objects
+    class_names = ['Upper', 'Lower']
+    objects = []
+    for class_name in class_names:
+        res = get_target_pixels(result_as_np_array, class_name, img, coords)
+        if res != None:
+            objects.append(res)
+    return objects
+
 
 def main(**args):
     # os.chdir('content/Self-Correction-Human-Parsing/')
@@ -282,8 +321,8 @@ def main(**args):
             # if args.logits:
             #     logits_result_path = os.path.join(output_dir, img_name[:-4] + '.npy')
             #     np.save(logits_result_path, logits_result)
+    print("AVergae time", avg_time)
     return objects
-
 
 # if __name__ == '__main__':
 #     main()
