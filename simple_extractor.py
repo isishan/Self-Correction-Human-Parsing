@@ -168,8 +168,8 @@ def get_nearest_simple_color_rgb(rgb):
     else:
         return positions[index], names[index]
     end = time.time()
-    avg_time1 = (avg_time1 + (end1 - start1)) / 2
-    avg_time2 = (avg_time2 + (end - start2)) / 2
+    # avg_time1 = (avg_time1 + (end1 - start1)) / 2
+    # avg_time2 = (avg_time2 + (end - start2)) / 2
     avg_time3 = (avg_time3 + (end - start3)) / 2
     return positions_res, names_res
     # return positions[index], names[index]
@@ -372,7 +372,7 @@ def main(**args):
     objects = get_final_objects(objects)
     # print("AVergae time 1", avg_time1)
     # print("AVergae time 2", avg_time2)
-    # print("AVergae time 3", avg_time3)
+    print("AVergae time 3", avg_time3)
     return objects
 
 # if __name__ == '__main__':
