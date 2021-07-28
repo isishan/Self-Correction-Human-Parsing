@@ -372,7 +372,7 @@ def main(**args):
     objects = get_final_objects(objects)
     # print("AVergae time 1", avg_time1)
     # print("AVergae time 2", avg_time2)
-    print("AVergae time 3", avg_time3)
+    print("AVergae time 3", avg_time3/40)
     return objects
 
 # if __name__ == '__main__':
