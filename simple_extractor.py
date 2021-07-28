@@ -120,42 +120,57 @@ def print_pic(coords, img_path, colors):
     plt.show()
 
 
+names = ['Black', 'Black',
+         'Brown', 'Brown', 'Brown',
+         'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
+         'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
+         'Blue', 'Blue', 'Blue',
+         'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
+         'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
+         'Green', 'Green', 'Green', 'Green',
+         'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
+         'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
+positions = [(0, 0, 0), (51, 51, 0),
+             (170, 110, 140), (139, 0, 0), (128, 0, 0),
+             (255, 255, 204), (255, 255, 153), (255, 255, 102), (255, 255, 0), (204, 204, 0), (153, 153, 0),
+             (176, 224, 230), (135, 206, 235), (0, 191, 255), (176, 196, 222), (30, 144, 255), (100, 149, 237),
+             (70, 130, 180), (95, 158, 160), (123, 104, 238), (106, 90, 205), (72, 61, 139), (65, 105, 225),
+             (0, 0, 255), (0, 0, 205), (0, 0, 128), (25, 25, 112),
+             (192, 192, 192), (169, 169, 169), (128, 128, 128), (105, 105, 105), (119, 136, 153), (112, 128, 144),
+             (47, 79, 79),
+             (50, 205, 50), (0, 255, 0), (34, 139, 34), (0, 128, 0), (0, 100, 0), (173, 255, 47), (154, 205, 50),
+             (0, 250, 154), (144, 238, 144), (152, 251, 152), (60, 179, 113), (32, 178, 170), (46, 139, 87),
+             (128, 128, 0), (85, 107, 47), (107, 142, 35),
+             (255, 160, 122), (250, 128, 114), (233, 150, 122), (240, 128, 128), (205, 92, 92), (220, 20, 60),
+             (178, 34, 34), (255, 0, 0), (255, 99, 71), (255, 69, 0), (219, 112, 147),
+             (211, 211, 211), (220, 220, 220), (230, 230, 250), (255, 255, 255), (255, 250, 250), (240, 255, 240),
+             (245, 255, 250), (240, 255, 255), (253, 245, 230), (255, 250, 240), (255, 255, 240), (240, 248, 255)
+             ]
+
+spacedb = KDTree(positions)
+
+
 def get_nearest_simple_color_rgb(rgb):
-    names = ['Black', 'Black',
-             'Brown', 'Brown', 'Brown',
-             'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
-             'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
-             'Blue', 'Blue', 'Blue',
-             'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
-             'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
-             'Green', 'Green', 'Green', 'Green',
-             'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
-             'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
-    positions = [(0, 0, 0), (51, 51, 0),
-                 (170, 110, 140), (139, 0, 0), (128, 0, 0),
-                 (255, 255, 204), (255, 255, 153), (255, 255, 102), (255, 255, 0), (204, 204, 0), (153, 153, 0),
-                 (176, 224, 230), (135, 206, 235), (0, 191, 255), (176, 196, 222), (30, 144, 255), (100, 149, 237),
-                 (70, 130, 180), (95, 158, 160), (123, 104, 238), (106, 90, 205), (72, 61, 139), (65, 105, 225),
-                 (0, 0, 255), (0, 0, 205), (0, 0, 128), (25, 25, 112),
-                 (192, 192, 192), (169, 169, 169), (128, 128, 128), (105, 105, 105), (119, 136, 153), (112, 128, 144),
-                 (47, 79, 79),
-                 (50, 205, 50), (0, 255, 0), (34, 139, 34), (0, 128, 0), (0, 100, 0), (173, 255, 47), (154, 205, 50),
-                 (0, 250, 154), (144, 238, 144), (152, 251, 152), (60, 179, 113), (32, 178, 170), (46, 139, 87),
-                 (128, 128, 0), (85, 107, 47), (107, 142, 35),
-                 (255, 160, 122), (250, 128, 114), (233, 150, 122), (240, 128, 128), (205, 92, 92), (220, 20, 60),
-                 (178, 34, 34), (255, 0, 0), (255, 99, 71), (255, 69, 0), (219, 112, 147),
-                 (211, 211, 211), (220, 220, 220), (230, 230, 250), (255, 255, 255), (255, 250, 250), (240, 255, 240),
-                 (245, 255, 250), (240, 255, 255), (253, 245, 230), (255, 250, 240), (255, 255, 240), (240, 248, 255)
-                 ]
-    spacedb = KDTree(positions)
+    global avg_time1, avg_time2, avg_time3
+    start3 = time.time()
+
+    start1 = time.time()
     querycolor = rgb
+
     dist, index = spacedb.query(querycolor)
+    end1 = time.time()
+    start2 = time.time()
+
     # print('The color %r is closest to %s.'%(querycolor, names[index]))
     if type(rgb) is list:
         positions_res = [positions[i] for i in index]
         names_res = [names[i] for i in index]
     else:
         return positions[index], names[index]
+    end = time.time()
+    avg_time1 = (avg_time1 + (end1 - start1)) / 2
+    avg_time2 = (avg_time2 + (end - start2)) / 2
+    avg_time3 = (avg_time3 + (end - start3)) / 2
     return positions_res, names_res
     # return positions[index], names[index]
     # print('The color %r is closest to %s.'%(querycolor, names[index]))
@@ -177,22 +192,32 @@ def dominant_color(colors):
     return freq[0]
 
 
+def dominant_color_2(nearest_colors_list):
+    freq = {}
+    for item in nearest_colors_list:
+        if (item in freq):
+            freq[item] += 1
+        else:
+            freq[item] = 1
+    freq = sorted(freq, key=freq.get, reverse=True)
+    # print(freq)
+    return freq[0]
+
+
 class_dict = {
     'Upper': [5, 6, 7, 10],
     'Lower': [9, 10, 12]
 }
 import time
 
-avg_time = 0
+avg_time1, avg_time2, avg_time3 = 0, 0, 0
 
 
-def get_target_pixels(result_as_np_array, class_name, img, coords):
+def get_target_pixels(result_as_np_array, class_name, img):
     # img_path = '/content/Self-Correction-Human-Parsing/new_images/' + img_name
     # im = Image.open(img_path)
     # pix = im.load()
     list_colors = []
-    start = time.time()
-    global avg_time
     # cv2_imshow(img)
     # for x_, x in enumerate(result_as_np_array):
     #   for y_, y in enumerate(x):
@@ -201,51 +226,72 @@ def get_target_pixels(result_as_np_array, class_name, img, coords):
     #       list_colors.append([bgr[2], bgr[1], bgr[0]])
 
     lis = np.array(class_dict[class_name])
-    # print(type(lis), lis)
-    res = np.where(result_as_np_array == lis)
     res = [(np.where(result_as_np_array == x)) for x in lis]
     res = (np.hstack(res))
     rows, columns = res[0], res[1]
-    # print(type(res), res)
-    rows, columns = res
     for r, c in zip(rows, columns):
         bgr = img[r, c]
         list_colors.append([bgr[2], bgr[1], bgr[0]])
-
-    end = time.time()
-    avg_time = (avg_time + (end - start)) / 2
-
-    # print(img[x_,y_], get_nearest_simple_color_rgb(img[x_,y_])[1])
-    if list_colors == []:
-        return None
-    color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
-    coords1 = {
-        'x1': int(coords[0]),
-        'y1': int(coords[1]),
-        'x2': int(coords[2]),
-        'y2': int(coords[3])
-    }
-    coords2 = {
-        'top-left': [int(coords[0]), int(coords[1])],
-        'bottom-right': [int(coords[2]), int(coords[3])]
-    }
-    return {
-        'class': class_name,
-        'confidence': 100,
-        'coordinates': coords1,
-        'coords': coords2,
-        'color1': color1[1]
-    }
+    return list_colors
+    # if list_colors == []:
+    #     return None
+    # color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
+    # coords1 = {
+    #     'x1': int(coords[0]),
+    #     'y1': int(coords[1]),
+    #     'x2': int(coords[2]),
+    #     'y2': int(coords[3])
+    # }
+    # coords2 = {
+    #     'top-left': [int(coords[0]), int(coords[1])],
+    #     'bottom-right': [int(coords[2]), int(coords[3])]
+    # }
+    # return {
+    #     'class': class_name,
+    #     'confidence': 100,
+    #     'coordinates': coords1,
+    #     'coords': coords2,
+    #     'color1': color1[1]
+    # }
 
 
-def get_objects(result_as_np_array, img, coords):
+def get_objects(result_as_np_array, img):
+    # class_names = ['Upper', 'Lower']
+    # objects = []
+    # for class_name in class_names:
+    #     res = get_target_pixels(result_as_np_array, class_name, img, coords)
+    #     if res != None:
+    #         objects.append(res)
+    # return objects
+
     class_names = ['Upper', 'Lower']
     objects = []
+    sizes = [0]
+    consolidated_target_colors = []
     for class_name in class_names:
-        res = get_target_pixels(result_as_np_array, class_name, img, coords)
-        if res != None:
-            objects.append(res)
-    return objects
+        instance_target_colors = get_target_pixels(result_as_np_array, class_name, img)
+        sizes.append(sizes[-1] + len(instance_target_colors))
+        consolidated_target_colors += instance_target_colors
+    return consolidated_target_colors, sizes
+
+
+def get_final_objects(input_obj):
+    main_list_pixels = []
+    for key, val in input_obj.items():
+        # print(key, len(val))
+        for v in val:
+            # print(len(v))
+            main_list_pixels += v[0]
+    nearest_colors_list = get_nearest_simple_color_rgb(main_list_pixels)[0]
+    val1 = {}
+    for key, val in input_obj.items():
+        for v in val:
+            if key in val1:
+                val1[key].append(dominant_color_2(nearest_colors_list[v[1][0]:v[1][1]]))
+            else:
+                val1[key] = [dominant_color_2(nearest_colors_list[v[1][0]:v[1][1]])]
+    # print(val1)
+    return input_obj
 
 
 def main(**args):
@@ -311,20 +357,26 @@ def main(**args):
             # print(args['coords'])
             # print(args['img_list'])
             # print(key)
+            instance_res, instance_sizes = get_objects(result_as_np_array, args['img_list'][img_name])
             if key in objects.keys():
-                objects[key] += (get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name]))
+                objects[key].append(instance_res, instance_sizes, args['coords'][img_name])
             else:
-                objects[key] = get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
-            output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
-            output_img.putpalette(palette)
-            output_img.save(parsing_result_path)
+                objects[key] = [[instance_res, instance_sizes, args['coords'][img_name]]]
+
+            # output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
+            # output_img.putpalette(palette)
+            # output_img.save(parsing_result_path)
             # if args.logits:
             #     logits_result_path = os.path.join(output_dir, img_name[:-4] + '.npy')
             #     np.save(logits_result_path, logits_result)
-    print("AVergae time", avg_time)
+    objects = get_final_objects(objects)
+    # print("AVergae time 1", avg_time1)
+    # print("AVergae time 2", avg_time2)
+    # print("AVergae time 3", avg_time3)
     return objects
 
 # if __name__ == '__main__':
 #     main()
+
 
 
