@@ -119,8 +119,12 @@ def print_pic(coords, img_path, colors):
     plt.savefig(img_path[:-3] + 'new.png', dpi=300, bbox_inches="tight")
     plt.show()
 
+import time
+avg_time = 0
 
 def get_nearest_simple_color_rgb(rgb):
+    global avg_time
+    start = time.time()
     names = ['Black', 'Black',
              'Brown', 'Brown', 'Brown',
              'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
@@ -156,6 +160,8 @@ def get_nearest_simple_color_rgb(rgb):
         names_res = [names[i] for i in index]
     else:
         return positions[index], names[index]
+    end = time.time()
+    avg_time = (avg_time + (end-start))/2
     return positions_res, names_res
     # return positions[index], names[index]
     # print('The color %r is closest to %s.'%(querycolor, names[index]))
