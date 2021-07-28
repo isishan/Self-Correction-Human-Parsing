@@ -29,7 +29,8 @@ import importlib
 simple_extractor_dataset = importlib.reload(simple_extractor_dataset)
 from datasets.simple_extractor_dataset import SimpleFolderDataset
 
-from scipy.spatial import KDTree
+# from scipy.spatial import KDTree
+from sklearn.neighbors import KDTree
 
 dataset_settings = {
     'lip': {
@@ -125,32 +126,25 @@ avg_time = 0
 def get_nearest_simple_color_rgb(rgb):
     global avg_time
     start = time.time()
-    names = ['Black', 'Black',
+    names = np.array(['Black', 'Black',
              'Brown', 'Brown', 'Brown',
              'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
-             'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
+             'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
              'Blue', 'Blue', 'Blue',
-             'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
+             'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
              'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
              'Green', 'Green', 'Green', 'Green',
              'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
-             'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White']
-    positions = [(0, 0, 0), (51, 51, 0),
-                 (170, 110, 140), (139, 0, 0), (128, 0, 0),
-                 (255, 255, 204), (255, 255, 153), (255, 255, 102), (255, 255, 0), (204, 204, 0), (153, 153, 0),
-                 (176, 224, 230), (135, 206, 235), (0, 191, 255), (176, 196, 222), (30, 144, 255), (100, 149, 237),
-                 (70, 130, 180), (95, 158, 160), (123, 104, 238), (106, 90, 205), (72, 61, 139), (65, 105, 225),
-                 (0, 0, 255), (0, 0, 205), (0, 0, 128), (25, 25, 112),
-                 (192, 192, 192), (169, 169, 169), (128, 128, 128), (105, 105, 105), (119, 136, 153), (112, 128, 144),
-                 (47, 79, 79),
-                 (50, 205, 50), (0, 255, 0), (34, 139, 34), (0, 128, 0), (0, 100, 0), (173, 255, 47), (154, 205, 50),
-                 (0, 250, 154), (144, 238, 144), (152, 251, 152), (60, 179, 113), (32, 178, 170), (46, 139, 87),
-                 (128, 128, 0), (85, 107, 47), (107, 142, 35),
-                 (255, 160, 122), (250, 128, 114), (233, 150, 122), (240, 128, 128), (205, 92, 92), (220, 20, 60),
-                 (178, 34, 34), (255, 0, 0), (255, 99, 71), (255, 69, 0), (219, 112, 147),
-                 (211, 211, 211), (220, 220, 220), (230, 230, 250), (255, 255, 255), (255, 250, 250), (240, 255, 240),
-                 (245, 255, 250), (240, 255, 255), (253, 245, 230), (255, 250, 240), (255, 255, 240), (240, 248, 255)
-                 ]
+             'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White'])
+    positions = np.array([(0,0,0), (51,51,0),
+    (170,110,140), (139,0,0), (128,0,0),
+    (255,255,204), (255,255,153), (255,255,102), (255,255,0), (204,204,0), (153,153,0),
+    (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180), (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,128), (25,25,112),
+    (169,169,169), (128,128,128), (105,105,105), (119,136,153), (112,128,144), (47,79,79),
+    (50,205,50), (0,255,0), (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,250,154), (144,238,144), (152,251,152), (60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
+    (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34), (255,0,0), (255,99,71), (255,69,0), (219,112,147),
+    (211,211,211), (220,220,220), (230,230,250), (255,255,255), (255,250,250), (240,255,240), (245,255,250), (240,255,255), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
+                 ])
     spacedb = KDTree(positions)
     querycolor = rgb
     dist, index = spacedb.query(querycolor)
@@ -174,6 +168,7 @@ def dominant_color(colors):
     nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
     freq = {}
     for item in nearest_colors_list:
+        item = tuple(map(tuple,item))[0]
         if (item in freq):
             freq[item] += 1
         else:
@@ -191,11 +186,85 @@ import time
 
 avg_time = 0
 
+def get_col_name(rgb):
+  rgb_col_dict = {
+    (0, 0, 0) : 'Black',
+    (51, 51, 0) : 'Black',
+    (170, 110, 140) : 'Brown',
+    (139, 0, 0) : 'Brown',
+    (128, 0, 0) : 'Brown',
+    (255, 255, 204) : 'Yellow',
+    (255, 255, 153) : 'Yellow',
+    (255, 255, 102) : 'Yellow',
+    (255, 255, 0) : 'Yellow',
+    (204, 204, 0) : 'Yellow',
+    (153, 153, 0) : 'Yellow',
+    (176, 224, 230) : 'Blue',
+    (135, 206, 235) : 'Blue',
+    (0, 191, 255) : 'Blue',
+    (176, 196, 222) : 'Blue',
+    (30, 144, 255) : 'Blue',
+    (100, 149, 237) : 'Blue',
+    (70, 130, 180) : 'Blue',
+    (95, 158, 160) : 'Blue',
+    (123, 104, 238) : 'Blue',
+    (106, 90, 205) : 'Blue',
+    (72, 61, 139) : 'Blue',
+    (65, 105, 225) : 'Blue',
+    (0, 0, 255) : 'Blue',
+    (0, 0, 205) : 'Blue',
+    (0, 0, 128) : 'Blue',
+    (25, 25, 112) : 'Blue',
+    (192, 192, 192) : 'Gray',
+    (169, 169, 169) : 'Gray',
+    (128, 128, 128) : 'Gray',
+    (105, 105, 105) : 'Gray',
+    (119, 136, 153) : 'Gray',
+    (112, 128, 144) : 'Gray',
+    (47, 79, 79) : 'Gray',
+    (50, 205, 50) : 'Green',
+    (0, 255, 0) : 'Green',
+    (34, 139, 34) : 'Green',
+    (0, 128, 0) : 'Green',
+    (0, 100, 0) : 'Green',
+    (173, 255, 47) : 'Green',
+    (154, 205, 50) : 'Green',
+    (0, 250, 154) : 'Green',
+    (144, 238, 144) : 'Green',
+    (152, 251, 152) : 'Green',
+    (60, 179, 113) : 'Green',
+    (32, 178, 170) : 'Green',
+    (46, 139, 87) : 'Green',
+    (128, 128, 0) : 'Green',
+    (85, 107, 47) : 'Green',
+    (107, 142, 35) : 'Green',
+    (255, 160, 122) : 'Red',
+    (250, 128, 114) : 'Red',
+    (233, 150, 122) : 'Red',
+    (240, 128, 128) : 'Red',
+    (205, 92, 92) : 'Red',
+    (220, 20, 60) : 'Red',
+    (178, 34, 34) : 'Red',
+    (255, 0, 0) : 'Red',
+    (255, 99, 71) : 'Red',
+    (255, 69, 0) : 'Red',
+    (219, 112, 147) : 'Red',
+    (211, 211, 211) : 'White',
+    (220, 220, 220) : 'White',
+    (230, 230, 250) : 'White',
+    (255, 255, 255) : 'White',
+    (255, 250, 250) : 'White',
+    (240, 255, 240) : 'White',
+    (245, 255, 250) : 'White',
+    (240, 255, 255) : 'White',
+    (253, 245, 230) : 'White',
+    (255, 250, 240) : 'White',
+    (255, 255, 240) : 'White',
+    (240, 248, 255) : 'White'
+  }
+  return rgb_col_dict[rgb]
 
 def get_target_pixels(result_as_np_array, class_name, img, coords):
-    # img_path = '/content/Self-Correction-Human-Parsing/new_images/' + img_name
-    # im = Image.open(img_path)
-    # pix = im.load()
     list_colors = []
     start = time.time()
     global avg_time
@@ -207,13 +276,9 @@ def get_target_pixels(result_as_np_array, class_name, img, coords):
     #       list_colors.append([bgr[2], bgr[1], bgr[0]])
 
     lis = np.array(class_dict[class_name])
-    # print(type(lis), lis)
-    res = np.where(result_as_np_array == lis)
     res = [(np.where(result_as_np_array == x)) for x in lis]
     res = (np.hstack(res))
     rows, columns = res[0], res[1]
-    # print(type(res), res)
-    rows, columns = res
     for r, c in zip(rows, columns):
         bgr = img[r, c]
         list_colors.append([bgr[2], bgr[1], bgr[0]])
@@ -224,7 +289,7 @@ def get_target_pixels(result_as_np_array, class_name, img, coords):
     # print(img[x_,y_], get_nearest_simple_color_rgb(img[x_,y_])[1])
     if list_colors == []:
         return None
-    color1 = get_nearest_simple_color_rgb(dominant_color(list_colors))
+    color1 = get_col_name(dominant_color(list_colors))
     coords1 = {
         'x1': int(coords[0]),
         'y1': int(coords[1]),
@@ -240,7 +305,7 @@ def get_target_pixels(result_as_np_array, class_name, img, coords):
         'confidence': 100,
         'coordinates': coords1,
         'coords': coords2,
-        'color1': color1[1]
+        'color1': color1
     }
 
 
