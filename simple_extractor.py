@@ -131,6 +131,7 @@ def get_nearest_simple_color_rgb(rgb):
     if type(rgb) is list:
         positions_res = [positions[i] for i in index]
         names_res = [names[i] for i in index]
+
     else:
         return positions[index], names[index]
     return positions_res, names_res
