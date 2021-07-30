@@ -95,34 +95,6 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
-
-def print_pic(coords, img_path, colors):
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
-    from PIL import Image
-
-    im = Image.open(img_path)
-
-    # Create figure and axes
-    fig, ax = plt.subplots()
-
-    # Display the image
-    ax.imshow(im)
-
-    # Create a Rectangle patch
-    rect = patches.Rectangle(coords[0], coords[1][0] - coords[0][0], coords[1][1] - coords[0][1], linewidth=1,
-                             edgecolor='r', facecolor='none')
-
-    # Add the patch to the Axes
-    ax.add_patch(rect)
-    colors = [get_nearest_simple_color_rgb(x)[1] for x in colors]
-    ax.annotate(str(colors), coords[0], color='black', weight='bold', fontsize=10, ha='center', va='center')
-    plt.savefig(img_path[:-3] + 'new.png', dpi=300, bbox_inches="tight")
-    plt.show()
-
-import time
-avg_time = 0
-
 def get_nearest_simple_color_rgb(rgb):
     global avg_time
     start = time.time()
@@ -148,7 +120,6 @@ def get_nearest_simple_color_rgb(rgb):
     spacedb = KDTree(positions)
     querycolor = rgb
     dist, index = spacedb.query(querycolor)
-    # print('The color %r is closest to %s.'%(querycolor, names[index]))
     if type(rgb) is list:
         positions_res = [positions[i] for i in index]
         names_res = [names[i] for i in index]
@@ -157,14 +128,8 @@ def get_nearest_simple_color_rgb(rgb):
     end = time.time()
     avg_time = (avg_time + (end-start))/2
     return positions_res, names_res
-    # return positions[index], names[index]
-    # print('The color %r is closest to %s.'%(querycolor, names[index]))
-
 
 def dominant_color(colors):
-    nearest_colors_list = []
-    # for i in colors:
-    #     nearest_colors_list.append(get_nearest_simple_color_rgb(i)[0])
     nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
     freq = {}
     for item in nearest_colors_list:
@@ -174,11 +139,13 @@ def dominant_color(colors):
         else:
             freq[item] = 1
     freq = sorted(freq, key=freq.get, reverse=True)
-    # print(freq)
-    return freq[0]
+    if len(freq)<3:
+        for i in range(len(freq)+1, 4):
+            freq.append(freq[0])
+    return freq[0], freq[1], freq[2]
 
 
-class_dict = {
+class_type = {
     'Upper': [5, 6, 7, 10],
     'Lower': [9, 10, 12]
 }
@@ -264,32 +231,22 @@ def get_col_name(rgb):
   }
   return rgb_col_dict[rgb]
 
-def get_target_pixels(result_as_np_array, class_name, img, coords):
+def get_target_pixels(result_as_np_array, class_type_name, img, coords):
     list_colors = []
-    start = time.time()
-    global avg_time
-    # cv2_imshow(img)
-    # for x_, x in enumerate(result_as_np_array):
-    #   for y_, y in enumerate(x):
-    #     if result_as_np_array[x_, y_] in class_dict[class_name]:
-    #       bgr = img[x_,y_]
-    #       list_colors.append([bgr[2], bgr[1], bgr[0]])
-
-    lis = np.array(class_dict[class_name])
+    lis = np.array(class_type[class_type_name])
     res = [(np.where(result_as_np_array == x)) for x in lis]
     res = (np.hstack(res))
     rows, columns = res[0], res[1]
+    types_clothes=[]
     for r, c in zip(rows, columns):
+        if result_as_np_array[r][c] not in types_clothes:
+            types_clothes.append(result_as_np_array[r][c])
         bgr = img[r, c]
         list_colors.append([bgr[2], bgr[1], bgr[0]])
-
-    end = time.time()
-    avg_time = (avg_time + (end - start)) / 2
-
-    # print(img[x_,y_], get_nearest_simple_color_rgb(img[x_,y_])[1])
+    print(types_clothes)
     if list_colors == []:
         return None
-    color1 = get_col_name(dominant_color(list_colors))
+    color1 = get_col_name(dominant_color(list_colors)[0])
     coords1 = {
         'x1': int(coords[0]),
         'y1': int(coords[1]),
@@ -301,7 +258,8 @@ def get_target_pixels(result_as_np_array, class_name, img, coords):
         'bottom-right': [int(coords[2]), int(coords[3])]
     }
     return {
-        'class': class_name,
+        'class_type': class_type_name,
+        # 'class_name':
         'confidence': 100,
         'coordinates': coords1,
         'coords': coords2,
@@ -320,9 +278,6 @@ def get_objects(result_as_np_array, img, coords):
 
 
 def main(**args):
-    # os.chdir('content/Self-Correction-Human-Parsing/')
-    # print(os.getcwd())
-    # args = get_arguments()
     gpus = [int(i) for i in args['gpu'].split(',')]
     assert len(gpus) == 1
     if not args['gpu'] == 'None':
@@ -330,8 +285,6 @@ def main(**args):
 
     num_classes = dataset_settings[args['dataset']]['num_classes']
     input_size = dataset_settings[args['dataset']]['input_size']
-    label = dataset_settings[args['dataset']]['label']
-    # print("Evaluating total class number {} with {}".format(num_classes, label))
 
     model = networks.init_model('resnet101', num_classes=num_classes, pretrained=None)
 
@@ -349,7 +302,6 @@ def main(**args):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.406, 0.456, 0.485], std=[0.225, 0.224, 0.229])
     ])
-    # dataset = SimpleFolderDataset(root=args['input_dir'], input_size=input_size, transform=transform)
     dataset = SimpleFolderDataset(list_im=args['img_list'], input_size=input_size, transform=transform)
     dataloader = DataLoader(dataset)
 
@@ -378,10 +330,6 @@ def main(**args):
             parsing_result_path = os.path.join(args['output_dir'], img_name + '.png')
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
             key = img_name[:-2]
-            # print()
-            # print(args['coords'])
-            # print(args['img_list'])
-            # print(key)
             if key in objects.keys():
                 objects[key] += (get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name]))
             else:
@@ -389,13 +337,4 @@ def main(**args):
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
             output_img.save(parsing_result_path)
-            # if args.logits:
-            #     logits_result_path = os.path.join(output_dir, img_name[:-4] + '.npy')
-            #     np.save(logits_result_path, logits_result)
-    print("AVergae time", avg_time)
     return objects
-
-# if __name__ == '__main__':
-#     main()
-
-
