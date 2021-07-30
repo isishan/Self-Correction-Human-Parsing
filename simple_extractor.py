@@ -147,14 +147,13 @@ def dominant_color(colors):
 
 class_type = {
     'Upper': [5, 6, 7, 10],
-    'Lower': [9, 10, 12]
+    'Lower': [9, 10, 12],
+    'Hat': [1],
+    'Glove': [3],
+    'Sunglasses': [4]
 }
-import time
 
-avg_time = 0
-
-def get_col_name(rgb):
-  rgb_col_dict = {
+rgb_col_dict = {
     (0, 0, 0) : 'Black',
     (51, 51, 0) : 'Black',
     (170, 110, 140) : 'Brown',
@@ -228,7 +227,10 @@ def get_col_name(rgb):
     (255, 250, 240) : 'White',
     (255, 255, 240) : 'White',
     (240, 248, 255) : 'White'
-  }
+}
+
+def get_col_name(rgb):
+  global rgb_col_dict
   return rgb_col_dict[rgb]
 
 def get_target_pixels(result_as_np_array, class_type_name, img, coords):
@@ -243,10 +245,12 @@ def get_target_pixels(result_as_np_array, class_type_name, img, coords):
             types_clothes.append(result_as_np_array[r][c])
         bgr = img[r, c]
         list_colors.append([bgr[2], bgr[1], bgr[0]])
-    print(types_clothes)
     if list_colors == []:
         return None
-    color1 = get_col_name(dominant_color(list_colors)[0])
+    dom_cols = dominant_color(list_colors)
+    color1 = get_col_name(dom_cols[0])
+    color2 = get_col_name(dom_cols[1])
+    color3 = get_col_name(dom_cols[2])
     coords1 = {
         'x1': int(coords[0]),
         'y1': int(coords[1]),
@@ -259,16 +263,19 @@ def get_target_pixels(result_as_np_array, class_type_name, img, coords):
     }
     return {
         'class_type': class_type_name,
-        # 'class_name':
+        'class_name_list': [dataset_settings['lip']['label'][x] for x in types_clothes],
         'confidence': 100,
         'coordinates': coords1,
         'coords': coords2,
-        'color1': color1
+        'color1': color1,
+        'color2': color2,
+        'color3': color3
     }
 
 
 def get_objects(result_as_np_array, img, coords):
-    class_names = ['Upper', 'Lower']
+    global class_type
+    class_names = class_type.keys()
     objects = []
     for class_name in class_names:
         res = get_target_pixels(result_as_np_array, class_name, img, coords)
