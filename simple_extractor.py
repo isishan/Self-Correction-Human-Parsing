@@ -96,8 +96,8 @@ def get_palette(num_cls):
     return palette
 
 def get_nearest_simple_color_rgb(rgb):
-    global avg_time
-    start = time.time()
+    # global avg_time
+    # start = time.time()
     names = np.array(['Black', 'Black',
              'Brown', 'Brown', 'Brown',
              'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
@@ -125,8 +125,8 @@ def get_nearest_simple_color_rgb(rgb):
         names_res = [names[i] for i in index]
     else:
         return positions[index], names[index]
-    end = time.time()
-    avg_time = (avg_time + (end-start))/2
+    # end = time.time()
+    # avg_time = (avg_time + (end-start))/2
     return positions_res, names_res
 
 def dominant_color(colors):
