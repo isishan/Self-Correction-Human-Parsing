@@ -29,7 +29,6 @@ import importlib
 simple_extractor_dataset = importlib.reload(simple_extractor_dataset)
 from datasets.simple_extractor_dataset import SimpleFolderDataset
 
-# from scipy.spatial import KDTree
 from sklearn.neighbors import KDTree
 
 dataset_settings = {
@@ -54,98 +53,18 @@ dataset_settings = {
 }
 
 
-def get_arguments():
-    """Parse all the arguments provided from the CLI.
-    Returns:
-      A list of parsed arguments.
-    """
-    parser = argparse.ArgumentParser(description="Self Correction for Human Parsing")
-
-    parser.add_argument("--dataset", type=str, default='lip', choices=['lip', 'atr', 'pascal'])
-    parser.add_argument("--model-restore", type=str, default='checkpoints/final.pth',
-                        help="restore pretrained model parameters.")
-    parser.add_argument("--gpu", type=str, default='0', help="choose gpu device.")
-    parser.add_argument("--input-dir", type=str, default='new_images', help="path of input image folder.")
-    parser.add_argument("--output-dir", type=str, default='out', help="path of output image folder.")
-    parser.add_argument("--logits", action='store_true', default=False, help="whether to save the logits.")
-
-    return parser.parse_args()
-
-
-def get_palette(num_cls):
-    """ Returns the color map for visualizing the segmentation mask.
-    Args:
-        num_cls: Number of classes
-    Returns:
-        The color map
-    """
-    n = num_cls
-    palette = [0] * (n * 3)
-    for j in range(0, n):
-        lab = j
-        palette[j * 3 + 0] = 0
-        palette[j * 3 + 1] = 0
-        palette[j * 3 + 2] = 0
-        i = 0
-        while lab:
-            palette[j * 3 + 0] |= (((lab >> 0) & 1) << (7 - i))
-            palette[j * 3 + 1] |= (((lab >> 1) & 1) << (7 - i))
-            palette[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
-            i += 1
-            lab >>= 3
-    return palette
-
-def get_nearest_simple_color_rgb(rgb):
-    # global avg_time
-    # start = time.time()
-    names = np.array(['Black', 'Black',
-             'Brown', 'Brown', 'Brown',
-             'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow', 'Yellow',
-             'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Blue',
-             'Blue', 'Blue', 'Blue',
-             'Grey', 'Grey', 'Grey', 'Grey', 'Grey', 'Grey',
-             'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green', 'Green',
-             'Green', 'Green', 'Green', 'Green',
-             'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red', 'Red',
-             'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White', 'White'])
-    positions = np.array([(0,0,0), (51,51,0),
+positions = np.array([(0,0,0), (51,51,0),
     (170,110,140), (139,0,0), (128,0,0),
     (255,255,204), (255,255,153), (255,255,102), (255,255,0), (204,204,0), (153,153,0),
     (135,206,235), (0,191,255), (176,196,222), (30,144,255), (100,149,237), (70,130,180), (95,158,160), (123,104,238), (106,90,205), (72,61,139), (65,105,225), (0,0,255), (0,0,205), (0,0,128), (25,25,112),
     (169,169,169), (128,128,128), (105,105,105), (119,136,153), (112,128,144), (47,79,79),
     (50,205,50), (0,255,0), (34,139,34), (0,128,0), (0,100,0), (173,255,47), (154,205,50), (0,250,154), (144,238,144), (152,251,152), (60,179,113),(32,178,170), (46,139,87), (128,128,0), (85,107,47), (107,142,35),
     (255,160,122), (250,128,114), (233,150,122), (240,128,128), (205,92,92), (220,20,60), (178,34,34), (255,0,0), (255,99,71), (255,69,0), (219,112,147),
-    (211,211,211), (220,220,220), (230,230,250), (255,255,255), (255,250,250), (240,255,240), (245,255,250), (240,255,255), (253,245,230), (255,250,240), (255,255,240), (240,248,255)
-                 ])
-    spacedb = KDTree(positions)
-    querycolor = rgb
-    dist, index = spacedb.query(querycolor)
-    if type(rgb) is list:
-        positions_res = [positions[i] for i in index]
-        names_res = [names[i] for i in index]
-    else:
-        return positions[index], names[index]
-    # end = time.time()
-    # avg_time = (avg_time + (end-start))/2
-    return positions_res, names_res
+    (211,211,211), (220,220,220), (230,230,250), (255,255,255), (255,250,250), (240,255,240), (245,255,250), (240,255,255), (253,245,230), (255,250,240), (255,255,240), (240,248,255)])
 
-def dominant_color(colors):
-    nearest_colors_list = get_nearest_simple_color_rgb(colors)[0]
-    freq = {}
-    for item in nearest_colors_list:
-        item = tuple(map(tuple,item))[0]
-        if (item in freq):
-            freq[item] += 1
-        else:
-            freq[item] = 1
-    freq = sorted(freq, key=freq.get, reverse=True)
-    if len(freq)<3:
-        for i in range(len(freq)+1, 4):
-            freq.append(freq[0])
-    return freq[0], freq[1], freq[2]
+spacedb = KDTree(positions)
 
-
-class_type = {
+class_types = {
     'Upper': [5, 6, 7, 10],
     'Lower': [9, 10, 12],
     'Hat': [1],
@@ -229,15 +148,34 @@ rgb_col_dict = {
     (240, 248, 255) : 'White'
 }
 
-def get_col_name(rgb):
-  global rgb_col_dict
-  return rgb_col_dict[rgb]
+def get_nearest_simple_color_rgb(rgb):
+    querycolor = rgb
+    dist, index = spacedb.query(querycolor)
+    if type(rgb) is list:
+        positions_res = [positions[i] for i in index]
+    else:
+        return positions[index]
+    return positions_res
 
-def get_target_pixels(result_as_np_array, class_type_name, img, coords):
+def dominant_color(colors):
+    nearest_colors_list = get_nearest_simple_color_rgb(colors)
+    freq = {}
+    for item in nearest_colors_list:
+        item = tuple(map(tuple,item))[0]
+        if (item in freq):
+            freq[item] += 1
+        else:
+            freq[item] = 1
+    freq = sorted(freq, key=freq.get, reverse=True)
+    if len(freq)<3:
+        for i in range(len(freq)+1, 4):
+            freq.append(freq[0])
+    return freq[0], freq[1], freq[2]
+
+def get_target_pixel_colors(result_as_np_array, class_type_name, img, coords):
     list_colors = []
     lis = np.array(class_type[class_type_name])
-    res = [(np.where(result_as_np_array == x)) for x in lis]
-    res = (np.hstack(res))
+    res = np.hstack([(np.where(result_as_np_array == x)) for x in lis])
     rows, columns = res[0], res[1]
     types_clothes=[]
     for r, c in zip(rows, columns):
@@ -247,10 +185,16 @@ def get_target_pixels(result_as_np_array, class_type_name, img, coords):
         list_colors.append([bgr[2], bgr[1], bgr[0]])
     if list_colors == []:
         return None
-    dom_cols = dominant_color(list_colors)
-    color1 = get_col_name(dom_cols[0])
-    color2 = get_col_name(dom_cols[1])
-    color3 = get_col_name(dom_cols[2])
+    return dominant_color(list_colors)
+
+def get_target_object(result_as_np_array, class_type_name, img, coords):
+    dominant_colors = get_target_pixel_colors(result_as_np_array, class_type_name, img, coords)
+    if dominant_colors is None:
+        return None
+    global rgb_col_dict
+    color1 = rgb_col_dict[dominant_colors[0]]
+    color2 = rgb_col_dict[dominant_colors[1]]
+    color3 = rgb_col_dict[dominant_colors[2]]
     coords1 = {
         'x1': int(coords[0]),
         'y1': int(coords[1]),
@@ -272,13 +216,12 @@ def get_target_pixels(result_as_np_array, class_type_name, img, coords):
         'color3': color3
     }
 
-
-def get_objects(result_as_np_array, img, coords):
-    global class_type
-    class_names = class_type.keys()
+def get_instance_objects(result_as_np_array, img, coords):
+    global class_types
+    class_types_list = class_types.keys()
     objects = []
-    for class_name in class_names:
-        res = get_target_pixels(result_as_np_array, class_name, img, coords)
+    for class_type_name in class_types_list:
+        res = get_target_object(result_as_np_array, class_type_name, img, coords)
         if res != None:
             objects.append(res)
     return objects
@@ -315,7 +258,6 @@ def main(**args):
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
 
-    palette = get_palette(num_classes)
     objects = {}
     with torch.no_grad():
         for idx, batch in enumerate(tqdm(dataloader)):
@@ -334,14 +276,10 @@ def main(**args):
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            parsing_result_path = os.path.join(args['output_dir'], img_name + '.png')
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
             key = img_name[:-2]
             if key in objects.keys():
-                objects[key] += (get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name]))
+                objects[key] += get_instance_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
             else:
-                objects[key] = get_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
-            output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
-            output_img.putpalette(palette)
-            output_img.save(parsing_result_path)
+                objects[key] = get_instance_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
     return objects
