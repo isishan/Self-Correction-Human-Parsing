@@ -174,10 +174,10 @@ def dominant_color(colors):
 
 def get_target_pixel_colors(result_as_np_array, class_type_name, img, coords):
     list_colors = []
-    lis = np.array(class_type[class_type_name])
+    lis = np.array(class_types[class_type_name])
     res = np.hstack([(np.where(result_as_np_array == x)) for x in lis])
     rows, columns = res[0], res[1]
-    types_clothes=[]
+    types_clothes = []
     for r, c in zip(rows, columns):
         if result_as_np_array[r][c] not in types_clothes:
             types_clothes.append(result_as_np_array[r][c])
@@ -185,12 +185,14 @@ def get_target_pixel_colors(result_as_np_array, class_type_name, img, coords):
         list_colors.append([bgr[2], bgr[1], bgr[0]])
     if list_colors == []:
         return None
-    return dominant_color(list_colors)
+    return dominant_color(list_colors), types_clothes
 
 def get_target_object(result_as_np_array, class_type_name, img, coords):
-    dominant_colors = get_target_pixel_colors(result_as_np_array, class_type_name, img, coords)
-    if dominant_colors is None:
+    target_pixel_info = get_target_pixel_colors(result_as_np_array, class_type_name, img, coords)
+    if target_pixel_info is None:
         return None
+    dominant_colors = target_pixel_info[0]
+    types_clothes = target_pixel_info[1]
     global rgb_col_dict
     color1 = rgb_col_dict[dominant_colors[0]]
     color2 = rgb_col_dict[dominant_colors[1]]
