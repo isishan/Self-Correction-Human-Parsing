@@ -208,8 +208,8 @@ def get_target_object(result_as_np_array, class_type_name, img, coords):
         'bottom-right': [int(coords[2]), int(coords[3])]
     }
     return {
-        'class_type': class_type_name,
-        'class_name_list': [dataset_settings['lip']['label'][x] for x in types_clothes],
+        'class': class_type_name,
+        'cloth_type_list': [dataset_settings['lip']['label'][x] for x in types_clothes],
         'confidence': 100,
         'coordinates': coords1,
         'coords': coords2,
