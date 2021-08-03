@@ -65,10 +65,10 @@ positions = np.array([(0,0,0), (51,51,0),
 spacedb = KDTree(positions)
 
 class_types = {
-    'Upper': [5, 6, 7, 10],
-    'Lower': [9, 10, 12],
+    'Upper-Clothes': [5, 6, 7, 10],
+    'Lower-Clothes': [9, 10, 12],
     'Hat': [1],
-    'Glove': [3],
+    'Gloves': [3],
     'Sunglasses': [4]
 }
 
