@@ -18,21 +18,9 @@ import torch.nn as nn
 from torch.nn import functional as F
 # Note here we adopt the InplaceABNSync implementation from https://github.com/mapillary/inplace_abn
 # By default, the InplaceABNSync module contains a BatchNorm Layer and a LeakyReLu layer
-# from ..modules import InPlaceABNSync
+from modules import InPlaceABNSync
 
-# BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
-BatchNorm2d = nn.BatchNorm2d
-
-
-class InPlaceABNSync(BatchNorm2d):
-    def __init__(self, *args, **kwargs):
-        super(InPlaceABNSync, self).__init__(*args, **kwargs)
-        self.act = nn.LeakyReLU()
-
-    def forward(self, input):
-        output = super(InPlaceABNSync, self).forward(input)
-        output = self.act(output)
-        return output
+BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
 
 affine_par = True
 
@@ -347,4 +335,3 @@ def resnet101(num_classes=20, pretrained='./models/resnet101-imagenet.pth'):
     settings = pretrained_settings['resnet101']['imagenet']
     initialize_pretrained_model(model, settings, pretrained)
     return model
-
