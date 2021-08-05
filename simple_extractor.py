@@ -10,6 +10,7 @@
 @License :   This source code is licensed under the license found in the
              LICENSE file in the root directory of this source tree.
 """
+import time
 
 import os
 import torch
@@ -65,10 +66,10 @@ positions = np.array([(0,0,0), (51,51,0),
 spacedb = KDTree(positions)
 
 class_types = {
-    'Upper': [5, 6, 7, 10],
-    'Lower': [9, 10, 12],
+    'Upper-Clothes': [5, 6, 7, 10],
+    'Lower-Clothes': [9, 10, 12],
     'Hat': [1],
-    'Glove': [3],
+    'Gloves': [3],
     'Sunglasses': [4]
 }
 
@@ -174,10 +175,10 @@ def dominant_color(colors):
 
 def get_target_pixel_colors(result_as_np_array, class_type_name, img, coords):
     list_colors = []
-    lis = np.array(class_type[class_type_name])
+    lis = np.array(class_types[class_type_name])
     res = np.hstack([(np.where(result_as_np_array == x)) for x in lis])
     rows, columns = res[0], res[1]
-    types_clothes=[]
+    types_clothes = []
     for r, c in zip(rows, columns):
         if result_as_np_array[r][c] not in types_clothes:
             types_clothes.append(result_as_np_array[r][c])
@@ -185,12 +186,14 @@ def get_target_pixel_colors(result_as_np_array, class_type_name, img, coords):
         list_colors.append([bgr[2], bgr[1], bgr[0]])
     if list_colors == []:
         return None
-    return dominant_color(list_colors)
+    return dominant_color(list_colors), types_clothes
 
 def get_target_object(result_as_np_array, class_type_name, img, coords):
-    dominant_colors = get_target_pixel_colors(result_as_np_array, class_type_name, img, coords)
-    if dominant_colors is None:
+    target_pixel_info = get_target_pixel_colors(result_as_np_array, class_type_name, img, coords)
+    if target_pixel_info is None:
         return None
+    dominant_colors = target_pixel_info[0]
+    types_clothes = target_pixel_info[1]
     global rgb_col_dict
     color1 = rgb_col_dict[dominant_colors[0]]
     color2 = rgb_col_dict[dominant_colors[1]]
@@ -206,8 +209,8 @@ def get_target_object(result_as_np_array, class_type_name, img, coords):
         'bottom-right': [int(coords[2]), int(coords[3])]
     }
     return {
-        'class_type': class_type_name,
-        'class_name_list': [dataset_settings['lip']['label'][x] for x in types_clothes],
+        'class': class_type_name,
+        'cloth_type_list': [dataset_settings['lip']['label'][x] for x in types_clothes],
         'confidence': 100,
         'coordinates': coords1,
         'coords': coords2,
@@ -228,24 +231,26 @@ def get_instance_objects(result_as_np_array, img, coords):
 
 
 def main(**args):
+    avg_time = 0
+
     gpus = [int(i) for i in args['gpu'].split(',')]
     assert len(gpus) == 1
     if not args['gpu'] == 'None':
         os.environ["CUDA_VISIBLE_DEVICES"] = args['gpu']
-
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     num_classes = dataset_settings[args['dataset']]['num_classes']
     input_size = dataset_settings[args['dataset']]['input_size']
 
     model = networks.init_model('resnet101', num_classes=num_classes, pretrained=None)
 
-    state_dict = torch.load(args['model_restore'])['state_dict']
+    state_dict = torch.load(args['model_restore'], map_location=torch.device('cpu'))['state_dict']
     from collections import OrderedDict
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         name = k[7:]  # remove `module.`
         new_state_dict[name] = v
     model.load_state_dict(new_state_dict)
-    model.cuda()
+    model.cpu()
     model.eval()
 
     transform = transforms.Compose([
@@ -268,7 +273,7 @@ def main(**args):
             w = meta['width'].numpy()[0]
             h = meta['height'].numpy()[0]
 
-            output = model(image.cuda())
+            output = model(image.cpu())
             upsample = torch.nn.Upsample(size=input_size, mode='bilinear', align_corners=True)
             upsample_output = upsample(output[0][-1][0].unsqueeze(0))
             upsample_output = upsample_output.squeeze()
@@ -278,8 +283,13 @@ def main(**args):
             parsing_result = np.argmax(logits_result, axis=2)
             result_as_np_array = np.asarray(parsing_result, dtype=np.uint8)
             key = img_name[:-2]
+
+            start = time.time()
+
             if key in objects.keys():
                 objects[key] += get_instance_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
             else:
                 objects[key] = get_instance_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
+            avg_time += time.time() - start
+    print("COLOR DETECTOR {} seconds per instance {} total time".format((avg_time)/len(args['img_list']), avg_time))
     return objects
