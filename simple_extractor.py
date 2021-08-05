@@ -234,20 +234,20 @@ def main(**args):
     assert len(gpus) == 1
     if not args['gpu'] == 'None':
         os.environ["CUDA_VISIBLE_DEVICES"] = args['gpu']
-
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     num_classes = dataset_settings[args['dataset']]['num_classes']
     input_size = dataset_settings[args['dataset']]['input_size']
 
     model = networks.init_model('resnet101', num_classes=num_classes, pretrained=None)
 
-    state_dict = torch.load(args['model_restore'])['state_dict']
+    state_dict = torch.load(args['model_restore'], map_location=torch.device('cpu'))['state_dict']
     from collections import OrderedDict
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         name = k[7:]  # remove `module.`
         new_state_dict[name] = v
     model.load_state_dict(new_state_dict)
-    model.cuda()
+    model.cpu()
     model.eval()
 
     transform = transforms.Compose([
@@ -270,7 +270,7 @@ def main(**args):
             w = meta['width'].numpy()[0]
             h = meta['height'].numpy()[0]
 
-            output = model(image.cuda())
+            output = model(image.cpu())
             upsample = torch.nn.Upsample(size=input_size, mode='bilinear', align_corners=True)
             upsample_output = upsample(output[0][-1][0].unsqueeze(0))
             upsample_output = upsample_output.squeeze()
@@ -285,3 +285,5 @@ def main(**args):
             else:
                 objects[key] = get_instance_objects(result_as_np_array, args['img_list'][img_name], args['coords'][img_name])
     return objects
+
+
