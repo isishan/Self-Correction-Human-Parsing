@@ -53,7 +53,7 @@ dataset_settings = {
 }
 
 
-spacedb = KDTree(positions)
+
 
 class_types = {
     'Upper-Clothes': [5, 6, 7, 10],
