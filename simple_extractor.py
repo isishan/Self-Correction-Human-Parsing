@@ -233,9 +233,9 @@ def get_target_object(result_as_np_array, class_type_name, img, coords):
     dominant_colors = target_pixel_info[0]
     types_clothes = target_pixel_info[1]
     global rgb_col_dict
-    color1 = rgb_col_dict[dominant_colors[0]]
-    color2 = rgb_col_dict[dominant_colors[1]]
-    color3 = rgb_col_dict[dominant_colors[2]]
+    color1 = dominant_colors[0]
+    color2 = dominant_colors[1]
+    color3 = dominant_colors[2]
     coords1 = {
         'x1': int(coords[0]),
         'y1': int(coords[1]),
