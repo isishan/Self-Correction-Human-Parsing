@@ -198,15 +198,16 @@ def get_nearest_simple_color_rgb(rgb):
 def dominant_color(colors):
     nearest_colors_list = get_nearest_simple_color_rgb(colors)
     freq = {}
-    for item in nearest_colors_list:
-        item = tuple(map(tuple,item))[0]
-        if (item in freq):
-            freq[item] += 1
+    for i, item in enumerate(nearest_colors_list):
+        item = tuple(map(tuple, item))[0]
+        if (rgb_col_dict[item] in freq):
+            freq[rgb_col_dict[item]] += 1
         else:
-            freq[item] = 1
+            freq[rgb_col_dict[item]] = 1
+
     freq = sorted(freq, key=freq.get, reverse=True)
-    if len(freq)<3:
-        for i in range(len(freq)+1, 4):
+    if len(freq) < 3:
+        for i in range(len(freq) + 1, 4):
             freq.append(freq[0])
     return freq[0], freq[1], freq[2]
 
